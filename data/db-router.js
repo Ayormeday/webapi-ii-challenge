@@ -3,7 +3,7 @@ const express = require('express')
 const db = require("./db.js");
 
 const router = express.Router();
-const errorMessage = "There was an error with this request..."
+
 
 router.get("/", (req, res) => {
     db.find(req.query)
@@ -22,11 +22,14 @@ router.get("/", (req, res) => {
 
 router.post("/", (req, res) => {
     const { title, contents } = req.body;
+
+    //checks for title and contents
     if(!title || !contents) {
         res.status(400).json({
             errorMessage: "Please provide title and contents for the post."
         })
     } else {
+        //add post
         db.insert(req.body)
         .then(post => {
             res.status(201).json(post);
@@ -38,19 +41,39 @@ router.post("/", (req, res) => {
     }
 })
 
-// router.post("/:id/comments", (res, req) => {
-//     const { id } = req.params;
-//     const { text } = req.body;
 
-//     db.findById(id)
-//     .then(post => {
-//         res.status(200).json(post);
-//     })
-//     .catch(error => {
-//         console.log(error)
-//         res.status(404).json({ message: "The post with the specified ID does not exist." });
-//     });
-// })
 
+// Creates a comment for the post with the specified id using information sent inside of the request body.
+router.post('/:id/comments', (req, res) => {
+  const { id } = req.params;
+  const { text } = req.body;
+  // check required text
+  if (!text) {
+    res.status(400).json({ errorMessage: "Please provide text for the comment." }).end();
+  }
+  // find post
+  db.findById(id).then(post => {
+    if (!post) {
+      res.status(404).json({ message: "The post with the specified ID does not exist." });
+    } else {
+      // add comment
+      db.insertComment({ text, post_id: id }).then(comment => {
+        // get comment data
+        db.findCommentById(comment.id).then(newComment => {
+          res.status(201).json(newComment);
+        }).catch(err => {
+          res.status(500).json({ errorMessage: "Could not get newly created comment." }).end();
+        });
+      }).catch(err => {
+        res.status(500).json({ error: "There was an error while saving the comment to the database" }).end();
+      });
+    }
+  }).catch(err => {
+    res.status(500).json({ error: "The post information could not be retrieved." }).end();
+  });
+});      
+
+//
+router.get("/api/posts")
 
   module.exports = router;
