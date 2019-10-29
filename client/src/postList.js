@@ -18,7 +18,7 @@ export default function PostList(props) {
   }, []);
 
   return (
-    <div classNme="posts">
+    <div className="posts">
       {posts.map(post => { 
         return <PostCard key={post.id} title={post.title} contents={post.contents} />;
       })}
