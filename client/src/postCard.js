@@ -7,8 +7,8 @@ export default function PostCard (props) {
 
     return (
         <div className="post-card">
-            <h1>{title}</h1>
-            <p>{contents}</p>
+            <h1 className="title">{title}</h1>
+            <p className="contents">{contents}</p>
         </div>
     )
 }
