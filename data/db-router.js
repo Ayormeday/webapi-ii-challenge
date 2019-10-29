@@ -34,11 +34,9 @@ router.post("/", (req, res) => {
       })
       .catch(error => {
         console.log(error);
-        res
-          .status(500)
-          .json({
-            error: "There was an error while saving the post to the database"
-          });
+        res.status(500).json({
+          error: "There was an error while saving the post to the database"
+        });
       });
   }
 });
@@ -57,7 +55,7 @@ router.post("/:id/comments", (req, res) => {
   // find post
   db.findById(id)
     .then(post => {
-      if (!post) {
+      if (post.length === 0) {
         res
           .status(404)
           .json({ message: "The post with the specified ID does not exist." });
@@ -70,7 +68,7 @@ router.post("/:id/comments", (req, res) => {
               .then(newComment => {
                 res.status(201).json(newComment);
               })
-              .catch(err => {
+              .catch(() => {
                 res
                   .status(500)
                   .json({
@@ -79,7 +77,7 @@ router.post("/:id/comments", (req, res) => {
                   .end();
               });
           })
-          .catch(err => {
+          .catch(() => {
             res
               .status(500)
               .json({
@@ -90,7 +88,7 @@ router.post("/:id/comments", (req, res) => {
           });
       }
     })
-    .catch(err => {
+    .catch(() => {
       res
         .status(500)
         .json({ error: "The post information could not be retrieved." })
@@ -98,26 +96,54 @@ router.post("/:id/comments", (req, res) => {
     });
 });
 
-//retireve posts from data base
-router.get("/api/posts", (req, res) => {
-  db.find(req.query)
-    .then(posts => {
-      res.status(200).json(posts);
-    })
-    .catch(error => {
-      // log error to database
-      console.log(error);
-      res
-        .status(500)
-        .json({ error: "The posts information could not be retrieved." });
-    });
-});
 
-router.get("/api/posts/:id", (req, res) => {
+//retireve posts from data base
+router.get("/", (req, res) => {
+    db.find(req.query)
+      .then(posts => {
+        res.status(200).json(posts);
+      })
+      .catch(error => {
+        // log error to database
+        console.log(error);
+        res
+          .status(500)
+          .json({ error: "The posts information could not be retrieved." });
+      });
+  });
+
+router.get("/:id", (req, res) => {
+    const { id } = req.params;
+    //find post by id
+    db.findById(id).then(post => {
+      if (post.length === 0) {
+        res
+          .status(404)
+          .json({ message: "The post with the specified ID does not exist." });
+      } else {
+        db.findById(id)
+          //add the retrieved post
+          .then(newPost => {
+            res.status(200).json(newPost);
+          })
+          .catch(error => {
+            res
+              .status(500)
+              .json({
+                error: "The comments information could not be retrieved."
+              });
+          });
+      }
+    });
+  });
+  
+
+//get data comments by id
+router.get("/:id/comments", (req, res) => {
   const { id } = req.params;
   //find post by id
   db.findById(id).then(post => {
-    if (!post) {
+    if (post.length === 0) {
       res
         .status(404)
         .json({ message: "The post with the specified ID does not exist." });
@@ -127,22 +153,73 @@ router.get("/api/posts/:id", (req, res) => {
         .then(newPost => {
           res.status(200).json(newPost);
         })
-        .catch(error => {
-          res
-            .status(500)
-            .json({
-              error: "The comments information could not be retrieved."
-            });
+        .catch(() => {
+          res.status(500).json({
+            error: "The comments information could not be retrieved."
+          });
+        });
+    }
+  });
+});
+
+//handles delete request
+router.delete("/:id", (req, res) => {
+  const { id } = req.params;
+  db.findById(id).then(post => {
+    if (post.length === 0) {
+      res
+        .status(404)
+        .json({ message: "The post with the specified ID does not exist." });
+    } else {
+      db.remove(id)
+        .then(deletedPost => {
+          res.status(200).json(deletedPost);
+        })
+        .catch(() => {
+          res.status(500).json({ error: "The post could not be removed" });
         });
     }
   });
 });
 
 
-router.delete()
 
 
-
+// when clients makes a put request
+router.put("/:id", (req, res) => {
+    const { id } = req.params;
+    const { title, contents } = req.body;
+    // check required title and contents
+    if (!title || !contents ) {
+      res
+        .status(400)
+        .json({ errorMessage: "Please provide title and contents for the post." })
+        .end();
+    }
+    // find post
+    db.findById(id)
+      .then(post => {
+        if (post.length === 0) {
+          res
+            .status(404)
+            .json({ message: "The post with the specified ID does not exist." });
+        } else {
+          // add post
+          const postToAdd = {
+              title,
+              contents
+          }
+          db.update(id, postToAdd)
+          .then(newPost => {
+              res.status(200).json(newPost)
+          })
+          .catch(() => {
+              res.status(500).json({ error: "The post information could not be modified." })
+          })
+          
+        }
+    });
+});
 
 
 
