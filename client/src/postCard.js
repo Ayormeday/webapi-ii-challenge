@@ -6,7 +6,7 @@ export default function PostCard (props) {
     const { title, contents } = props;
 
     return (
-        <div>
+        <div className="post-card">
             <h1>{title}</h1>
             <p>{contents}</p>
         </div>
